@@ -205,9 +205,7 @@ Cada campo de la cabecera fija un parámetro del transmisor:
 
 **Reloj de bit.** Con $W$ ciclos de BCLK por slot:
 
-$$
-f_{BCLK} = F_s \cdot N_c \cdot W, \qquad W \ge N
-$$
+$$f_{BCLK} = F_s \cdot N_c \cdot W, \qquad W \ge N$$
 
 Si $W > N$, el transmisor rellena con ceros los bits después del LSB y el receptor descarta lo que sobre, porque en I2S la posición del MSB es fija y la del LSB depende de la longitud de palabra [5]. Por eso la resolución del WAV y la del DAC no necesitan coincidir. El MSB de cada palabra sale un periodo de BCLK después del cambio de WS, y los datos están en complemento a 2 [5], que es justamente lo que produce la conversión de la sección 5.
 
@@ -215,68 +213,94 @@ Si $W > N$, el transmisor rellena con ceros los bits después del LSB y el recep
 
 **Precisión del reloj.** Si BCLK se obtiene dividiendo el reloj del sistema $f_{clk}$ por un entero $D$, la frecuencia de muestreo real es
 
-$$
-F_{s,\mathrm{real}} = \frac{f_{clk}}{D \cdot N_c \cdot W}
-$$
+$$F_{s,\mathrm{real}} = \frac{f_{clk}}{D \cdot N_c \cdot W}$$
 
 y cualquier diferencia con la $F_s$ del archivo desplaza la altura del sonido (en cents) y cambia la duración:
 
-$$
-\Delta = 1200 \log_2 \frac{F_{s,\mathrm{real}}}{F_s}\ \ [\mathrm{cents}], \qquad T_{\mathrm{real}} = T \cdot \frac{F_s}{F_{s,\mathrm{real}}}
-$$
+$$\Delta = 1200 \log_2 \frac{F_{s,\mathrm{real}}}{F_s}\ \ [\mathrm{cents}], \qquad T_{\mathrm{real}} = T \cdot \frac{F_s}{F_{s,\mathrm{real}}}$$
 
 Ejemplo: con $f_{clk} = 50$ MHz, $D = 32$, $W = 16$ y $N_c = 2$ se obtiene $F_{s,\mathrm{real}} = 48\,828.125$ Hz frente a los 48 000 Hz del archivo: el audio suena $\Delta \approx +29.6$ cents más agudo (casi un tercio de semitono) y dura un 1.7 % menos. Con $f_{clk} = 12.288$ MHz $= 256 \cdot 48$ kHz y $D = 8$ la relación es exacta, lo que explica por qué los relojes de audio (y MCLK) son múltiplos de $256\,F_s$.
 
 **Presupuesto de memoria.** Almacenar $T$ segundos de audio requiere
 
-$$
-\mathrm{bits} = F_s \cdot N_c \cdot N \cdot T
-$$
+$$\mathrm{bits} = F_s \cdot N_c \cdot N \cdot T$$
 
 Un segundo a 48 kHz, 16 bits, estéreo ocupa 1.536 Mbit. Si no cabe en la BRAM de la FPGA, se reduce $F_s$, se pasa a mono o se usa memoria externa (SPI flash, SD).
 
 **Vuelta al mundo analógico.** La reconstrucción ideal es una interpolación con funciones sinc [8]. Un DAC real mantiene cada valor durante $T_s$ (retenedor de orden cero), lo que introduce la atenuación
 
-$$
-\left|H(f)\right| = \left|\frac{\sin(\pi f/F_s)}{\pi f/F_s}\right|
-$$
+$$\left\vert{}H(f)\right\vert{} = \left\vert{}\frac{\sin(\pi f/F_s)}{\pi f/F_s}\right\vert{}$$
 
 que vale $-3.92$ dB en $F_s/2$ y $-2.64$ dB a 20 kHz con $F_s = 48$ kHz, además de réplicas espectrales alrededor de múltiplos de $F_s$ que el filtro de salida debe eliminar. Los DAC con sobremuestreo interno, alimentados por MCLK, desplazan esas réplicas a frecuencias mucho más altas.
 
 ---
 
-### 8. Flujo usado en este proyecto
+### 8. Representación de muestras con signo y su transmisión física en I2S
 
-La FPGA no interpreta la cabecera en tiempo de ejecución. El WAV se procesa en el PC, sus parámetros ($F_s$, $N_c$, $N$) se fijan como `parameter` en Verilog, y solo las muestras llegan al hardware:
+La representación de las fases positivas (compresión) y negativas (rarefacción) de una onda acústica varía según la profundidad de bits seleccionada en la cabecera WAV, afectando directamente a la disposición de la línea serie de datos `SD` en la interfaz I2S.
 
-```mermaid
-flowchart LR
-    A["audio.wav"] -->|"wav2mem.py"| B["audio.mem"]
-    B -->|"readmemh"| C["BRAM"]
-    C --> D["i2s_tx.v"]
-    D -->|"BCLK, WS, SD"| E["DAC I2S"]
-    E --> F["Amplificador y parlante"]
-```
+#### Codificación de amplitudes y fundamento del Complemento a dos
 
-`wav2mem.py` recorre los chunks (no asume 44 bytes), verifica que el formato sea PCM lineal (también dentro de `WAVE_FORMAT_EXTENSIBLE`), convierte 8 bits a complemento a 2, y escribe una muestra por línea en hexadecimal, entrelazada L, R, L, R:
+**1. Enteros con signo en Complemento a dos ($N > 8$ bits)**
 
-```bash
-python3 wav2mem.py audio.wav audio.mem
-# Fs = 48000 Hz, canales = 2, bits = 16, bloques = 48000
-# duracion = 1.0000 s, memoria = 1536000 bits
-# f_WS = 48000 Hz, f_BCLK (slot = 16 b) = 1536000 Hz
-```
+Para resoluciones $N = 16$ o $N = 24$ bits, el archivo WAV almacena las muestras utilizando **Complemento a dos** (*Two's Complement*). Matemáticamente, una palabra binaria de $N$ bits $b_{N-1} b_{N-2} \dots b_1 b_0$ representa un valor decimal $s$ definido por:
 
-Carga en Verilog (IEEE 1364-2005, sección 17.2.9 [9]):
+$$s = -b_{N-1} \cdot 2^{N-1} + \sum_{i=0}^{N-2} b_i \cdot 2^i$$
 
-```verilog
-reg [15:0] rom [0:N_MUESTRAS-1];
-initial $readmemh("audio.mem", rom);
-```
+donde el bit de mayor peso ($b_{N-1}$ o MSB) posee un peso negativo $-2^{N-1}$, actuando directamente como **bit de signo**:
+- $b_{N-1} = 0$: indica que la muestra es **positiva** o cero ($s \ge 0$).
+- $b_{N-1} = 1$: indica que la muestra es **negativa** ($s < 0$).
 
-La alternativa, leer el WAV directamente desde una SD, exige implementar en hardware una FSM que recorra los chunks con la regla de la sección 3 antes de empezar a transmitir.
+> **¿Por qué se utiliza Complemento a dos en audio digital y hardware (FPGA/DSP)?**
+> 1. **Representación única del cero:** A diferencia de otros sistemas como signo/magnitud o complemento a 1, existe una sola representación binaria para el cero (`0x0000`), evitando ambigüedades.
+> 2. **Simplificación aritmética en HW:** La suma y la resta de muestras de audio (mezcla de canales, ajuste de volumen o filtros digitales FIR/IIR) se realizan utilizando sumadores binarios estándar sin necesidad de circuitos especiales para comparar signos.
+> 3. **Obtención del negativo:** Para calcular la representación de $-X$ a partir de $+X$, la regla de hardware es invertir todos los bits (operación lógica NOT) y sumar $1$:
+>    
+>    $$\text{Complemento a 2}(-X) = \overline{X} + 1$$
+> 
+>    *Ejemplo para 16 bits ($N=16$):*
+>    - $+1_{10} = \mathtt{0000\ 0000\ 0000\ 0001}_2$ (`0x0001`)
+>    - NOT($+1$) $= \mathtt{1111\ 1111\ 1111\ 1110}_2$
+>    - Sumar $1 = \mathtt{1111\ 1111\ 1111\ 1111}_2 = -1_{10}$ (`0xFFFF`)
+
+En la siguiente tabla se resumen los estados característicos de una señal audio de 16 bits ($N=16$, rango $[-32\,768,\ +32\,767]$):
+
+| Estado de la onda | Valor decimal ($s$) | Hexadecimal | Binario de 16 bits ($b_{15} \dots b_0$) | Bit de signo ($b_{15}$) |
+| --- | --- | --- | --- | --- |
+| Pico máximo positivo | $+32\,767$ | `0x7FFF` | `0111 1111 1111 1111` | `0` |
+| Pulso positivo pequeño | $+1$ | `0x0001` | `0000 0000 0000 0001` | `0` |
+| Silencio (eje neutro) | $0$ | `0x0000` | `0000 0000 0000 0000` | `0` |
+| Pulso negativo pequeño | $-1$ | `0xFFFF` | `1111 1111 1111 1111` | `1` |
+| Valle máximo negativo | $-32\,768$ | `0x8000` | `1000 0000 0000 0000` | `1` |
+
+**2. Binario desplazado con offset ($N \le 8$ bits)**
+
+En muestras de 8 bits no se emplean números negativos. El rango $u \in [0, 255]$ desplaza el punto neutro de silencio a $128$ (`0x80`). Las amplitudes negativas corresponden a valores $u < 128$. Para procesar o transmitir este audio en buses estándar con signo (como I2S), se debe convertir a complemento a 2 restando $128$ ($s = u - 128$), lo cual equivale digitalmente a **invertir el bit MSB**.
+
+**3. Punto flotante IEEE 754 (32 bits)**
+
+Cuando `wFormatTag = 3`, las muestras se almacenan en coma flotante en el rango $[-1.0, +1.0]$. En la norma IEEE 754, el bit 31 define explícitamente el signo ($0$ para valores positivos, $1$ para valores negativos).
 
 ---
+
+#### Transmisión serie paso a paso en el bus I2S
+
+Al transferir una muestra desde el archivo WAV hacia el bus I2S mediante un registro de desplazamiento (por ejemplo, en un microcontrolador o FPGA), el protocolo establece el siguiente comportamiento temporal:
+
+1. **Prioridad MSB First:** I2S transmite el bit más significativo ($b_{N-1}$) en primer lugar [5]. Por lo tanto, **el bit de signo es el primer bit de datos que viaja por la línea SD**. El receptor (DAC) reconoce inmediatamente el sentido del desplazamiento del altavoz en el primer pulso de reloj útil.
+2. **Desfase de 1 BCLK (I2S Standard Offset):** La transmisión del MSB no inicia en el instante exacto de la transición de WS, sino **un ciclo completo de BCLK después** [5]. Este desfase proporciona tiempo de preparación (*setup time*) al receptor para conmutar entre los canales izquierdo y derecho.
+
+```text
+WS (LRCK) : \___________________ Canal Izquierdo (0) ___________________/¯¯¯¯¯¯¯¯ Canal Derecho (1) ...
+            
+BCLK      :  _|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-|_|-| ...
+            
+SD (Data) : ... [x] | MSB | B14 | B13 | B12 | ... | B1  | B0  |  N/U  | MSB | B14 | B13 | ...
+                      ^                                           ^
+                Bit de signo                                Bit de signo
+             (0=Pos / 1=Neg)                             (0=Pos / 1=Neg)
+            |<--1 BCLK-->|                              |<--1 BCLK-->|
+
 
 ### Referencias
 
