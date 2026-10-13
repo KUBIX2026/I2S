@@ -366,7 +366,7 @@ Si el tamaño del slot del transmisor es mayor que la resolución del audio ($W 
 ## Diagrama de flujo 
 
 <p align="center">
-  <img src="Imagenes\diagrama de flujo.drawio.png">
+  <img src="Imagenes\Diagrma protocolo i2s.drawio.png">
 </p>
 
 
