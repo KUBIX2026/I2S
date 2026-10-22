@@ -369,6 +369,12 @@ Si el tamaño del slot del transmisor es mayor que la resolución del audio ($W 
   <img src="Imagenes\Diagrma protocolo i2s.drawio.png">
 </p>
 
+## Diagrama de cajas
+
+<p align="center">
+  <img src="Imagenes\Diagrama de cajas I2S.png">
+</p>
+
 
 ### Referencias
 
