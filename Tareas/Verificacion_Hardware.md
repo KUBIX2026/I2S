@@ -3,6 +3,6 @@ Para esta tarea es importante tener en cuenta que el protocolo I2S no envia una 
 
 
 <p align="center">
-  <img src="Imagenes\Verificacion de hardware i2s.drawio.png">
+  <img src="Imagenes\Verificacion de hardware I2S.png">
 </p>
 

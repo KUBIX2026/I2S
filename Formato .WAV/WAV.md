@@ -302,6 +302,30 @@ SD (Data) : ... [x] | MSB | B14 | B13 | B12 | ... | B1  | B0  |  N/U  | MSB | B1
             |<--1 BCLK-->|                              |<--1 BCLK-->|
 
 
+#### Ejemplos de transmisión serie (8 bits, canal izquierdo, WS = 0)
+
+- **Transmisión de un pulso positivo ($s = +1$, binario `0000 0001`):**
+  1. WS conmuta a nivel bajo `0` (Canal Izquierdo).
+  2. Transcurre 1 ciclo de BCLK de retardo (línea SD en estado indeterminado o bit previo).
+  3. En el siguiente flanco de BCLK, se coloca en SD el MSB: **`0`** (signo positivo).
+  4. Se transmiten en serie los siguientes 6 bits intermedios: `000 000`.
+  5. En el último pulso de datos del slot se envía el LSB: **`1`**.
+
+- **Transmisión de un pulso negativo ($s = -1$, binario `1111 1111`):**
+  1. WS conmuta a nivel bajo `0` (Canal Izquierdo).
+  2. Transcurre 1 ciclo de BCLK de retardo.
+  3. En el siguiente flanco de BCLK, se coloca en SD el MSB: **`1`** (signo negativo).
+  4. Se transmiten en serie los 7 bits restantes, todos con nivel lógico **`1`**.
+
+Si el tamaño del slot del transmisor es mayor que la resolución del audio ($W > N$), los bits posteriores al LSB hasta completar la semi-trama de WS se rellenan con ceros (*zero-padding*) y son ignorados por el DAC.
+
+## Diagrama de flujo 
+
+<p align="center">
+  <img src="Imagenes\diagrama de flujo.drawio.png">
+</p>
+
+
 ### Referencias
 
 1. IBM Corporation y Microsoft Corporation, *Multimedia Programming Interface and Data Specifications 1.0*, agosto de 1991, pp. 56-65. Copia en McGill University: <https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf>
