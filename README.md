@@ -152,53 +152,10 @@ s = u - 2^{8M}\,\sigma, \qquad u = \sum_{i=0}^{M-1} b_i\,2^{8i}, \qquad
 \sigma = \begin{cases} 1 & b_{M-1} \ge 128 \\ 0 & \text{en otro caso} \end{cases}
 $$
 
----
-
-### 5. Del WAV al bus I2S
-
-Cada campo de la cabecera fija un parámetro del transmisor:
-
-| Campo WAV | Parámetro I2S | Relación |
-| --- | --- | --- |
-| `nSamplesPerSec` | frecuencia de WS | $f_{WS} = F_s$ |
-| `nChannels` | canales por trama | I2S transporta 2: WS = 0 izquierdo, WS = 1 derecho [5] |
-| `wBitsPerSample` | longitud de palabra | $N \le W$ (ancho de slot) |
-| `nBlockAlign` | una trama | 1 bloque WAV = 1 periodo completo de WS |
-| orden de bytes | orden de bits | WAV: little-endian por bytes. I2S: MSB primero [5] |
-
-**Reloj de bit.** Con $W$ ciclos de BCLK por slot:
-
-$$f_{BCLK} = F_s \cdot N_c \cdot W, \qquad W \ge N$$
-
-Si $W > N$, el transmisor rellena con ceros los bits después del LSB y el receptor descarta lo que sobre, porque en I2S la posición del MSB es fija y la del LSB depende de la longitud de palabra [5]. Por eso la resolución del WAV y la del DAC no necesitan coincidir. El MSB de cada palabra sale un periodo de BCLK después del cambio de WS, y los datos están en complemento a 2 [5], que es justamente lo que produce la conversión de la sección 5.
-
-**Endianness.** El WAV guarda el byte menos significativo primero, pero I2S transmite el bit más significativo primero. La conversión se hace una sola vez fuera de la FPGA: la memoria guarda cada muestra como entero de $N$ bits y el registro de desplazamiento del transmisor saca primero el bit `dato[N-1]`.
-
-**Precisión del reloj.** Si BCLK se obtiene dividiendo el reloj del sistema $f_{clk}$ por un entero $D$, la frecuencia de muestreo real es
-
-$$F_{s,\mathrm{real}} = \frac{f_{clk}}{D \cdot N_c \cdot W}$$
-
-y cualquier diferencia con la $F_s$ del archivo desplaza la altura del sonido (en cents) y cambia la duración:
-
-$$\Delta = 1200 \log_2 \frac{F_{s,\mathrm{real}}}{F_s}\ \ [\mathrm{cents}], \qquad T_{\mathrm{real}} = T \cdot \frac{F_s}{F_{s,\mathrm{real}}}$$
-
-Ejemplo: con $f_{clk} = 50$ MHz, $D = 32$, $W = 16$ y $N_c = 2$ se obtiene $F_{s,\mathrm{real}} = 48\,828.125$ Hz frente a los 48 000 Hz del archivo: el audio suena $\Delta \approx +29.6$ cents más agudo (casi un tercio de semitono) y dura un 1.7 % menos. Con $f_{clk} = 12.288$ MHz $= 256 \cdot 48$ kHz y $D = 8$ la relación es exacta, lo que explica por qué los relojes de audio (y MCLK) son múltiplos de $256\,F_s$.
-
-**Presupuesto de memoria.** Almacenar $T$ segundos de audio requiere
-
-$$\mathrm{bits} = F_s \cdot N_c \cdot N \cdot T$$
-
-Un segundo a 48 kHz, 16 bits, estéreo ocupa 1.536 Mbit. Si no cabe en la BRAM de la FPGA, se reduce $F_s$, se pasa a mono o se usa memoria externa (SPI flash, SD).
-
-**Vuelta al mundo analógico.** La reconstrucción ideal es una interpolación con funciones sinc [8]. Un DAC real mantiene cada valor durante $T_s$ (retenedor de orden cero), lo que introduce la atenuación
-
-$$\left\vert{}H(f)\right\vert{} = \left\vert{}\frac{\sin(\pi f/F_s)}{\pi f/F_s}\right\vert{}$$
-
-que vale $-3.92$ dB en $F_s/2$ y $-2.64$ dB a 20 kHz con $F_s = 48$ kHz, además de réplicas espectrales alrededor de múltiplos de $F_s$ que el filtro de salida debe eliminar. Los DAC con sobremuestreo interno, alimentados por MCLK, desplazan esas réplicas a frecuencias mucho más altas.
 
 ---
 
-### 6. Representación de muestras con signo y su transmisión física en I2S
+### 5. Representación de muestras con signo y su transmisión física en I2S
 
 La representación de las fases positivas (compresión) y negativas (rarefacción) de una onda acústica varía según la profundidad de bits seleccionada en la cabecera WAV, afectando directamente a la disposición de la línea serie de datos `SD` en la interfaz I2S.
 
