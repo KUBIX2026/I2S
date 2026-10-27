@@ -131,6 +131,18 @@ Las banderas quedan en 1 hasta que se escribe `CLR_ERR`.
 
 ---
 
+### 3.6 Criterios de aceptación
+
+| ID | Prueba | Criterio de aprobación |
+|---|---|---|
+| A1 | Reset | `CONTROL` = 0; `STATUS`: EMPTY = 1; `CLKDIV` = `DIV_RESET` |
+| A2 | Escribir 0x80, 0xFF, 0x00 y 0x7F con EN = 1 (simulación) | El receptor del testbench obtiene 0, +127, −128 y −1, en L y en R, en ese orden |
+| A3 | Temporización de la trama | Periodo de LRCLK = 32·DIV ciclos de `clk`; 32 flancos de subida de BCLK por trama; MSB 1 BCLK después del cambio de LRCLK |
+| A4 | 1025 escrituras con EN = 0 | LEVEL = 1024, FULL = 1, OVERFLOW = 1 |
+| A5 | EN = 1 con la FIFO vacía | SD = 0 y UNDERFLOW = 1; `CLR_ERR` la borra |
+| A6 | EN = 0 a mitad de una trama | La trama termina; luego BCLK = LRCLK = SD = 0 y RUN = 0 |
+| A7 | En la FPGA | $f_{LRCLK} = FS_{REAL}$ ± 100 ppm (osciloscopio); tono audible sin chasquidos |
+
 ## 4. Arquitectura
 
 ### 4.1 Partición hardware–software
