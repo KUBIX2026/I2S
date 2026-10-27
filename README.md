@@ -176,7 +176,7 @@ LRCLK cambia un slot antes del MSB de cada canal. El transmisor se detiene solo 
 ### 5.1 Frecuencia de muestreo real
 
 $$
-DIV = \operatorname{round}\!\left(\frac{FCIA\_FPGA}{32 \cdot FS}\right),
+DIV = \mathrm{round}\left(\frac{FCIA\_FPGA}{32 \cdot FS}\right),
 \qquad
 FS_{REAL} = \frac{FCIA\_FPGA}{32 \cdot DIV}
 $$
