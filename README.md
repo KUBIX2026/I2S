@@ -245,7 +245,7 @@ Para el diseño de la consola se establecen los siguientes parametros respecto a
 - **profundiidad de bits: 8 Bits**
 - **canales: 1**
 
-**Ademas se propone que el tamaño de los archivos dedicados al audio sean de maximo 25MB y minimo de 2MB, basandonos en los audios sugeridos en la carpeta I2S_sonidos**
+**Ademas se propone que el tamaño de los archivos dedicados al audio sean de maximo 25MB y minimo de 5MB, basandonos en los audios sugeridos en la carpeta I2S_sonidos**
 
 [I2S_sonidos](I2S_sonidos)
 
