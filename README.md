@@ -53,61 +53,7 @@ El contenedor puede transportar varios códecs (PCM lineal, µ-law, A-law, ADPCM
 
 ---
 
-### 2. De la onda física a los números: PCM
-
-Un micrófono convierte la presión acústica $p(t)$ en una tensión $x_c(t)$. El ADC la transforma en la secuencia de enteros que termina dentro del WAV mediante dos operaciones.
-
-**Muestreo.** Se toma una muestra cada $T_s = 1/F_s$ segundos:
-
-$$
-x[n] = x_c(nT_s), \qquad n \in \mathbb{Z}
-$$
-
-Por el teorema de muestreo de Nyquist-Shannon [7][8], si $x_c(t)$ está limitada en banda a $f_{max}$, puede reconstruirse exactamente a partir de $x[n]$ siempre que
-
-$$
-F_s > 2 f_{max}
-$$
-
-Como la audición humana llega a unos 20 kHz, las frecuencias típicas son $F_s = 44.1$ kHz (CD-Audio) y $F_s = 48$ kHz, que dejan margen para el filtro antialiasing. La energía por encima de $F_s/2$ no desaparece: se refleja (*aliasing*) dentro de la banda útil.
-
-**Cuantización.** Cada muestra se redondea a uno de $2^N$ niveles. Con $N$ bits en complemento a 2:
-
-$$
-s[n] \in \left[-2^{N-1},\ 2^{N-1}-1\right], \qquad x[n] \approx \frac{s[n]}{2^{N-1}} \in [-1,\ 1)
-$$
-
-El paso de cuantización es $q = \mathrm{FS}/2^N$, con FS el rango de escala completa. Si el error $e[n]$ se modela como uniforme en $[-q/2,\ q/2]$ e incorrelado con la señal [10], su potencia es
-
-$$
-\sigma_e^2 = \frac{1}{q}\int_{-q/2}^{q/2} e^2\, de = \frac{q^2}{12}
-$$
-
-Para una senoide de escala completa (amplitud $\mathrm{FS}/2$, valor rms $q\,2^N/(2\sqrt{2})$), la relación señal a ruido de cuantización en la banda $[0,\ F_s/2]$ es [6]:
-
-$$
-\mathrm{SQNR} = 20\log_{10}\left(\frac{q\,2^N/(2\sqrt{2})}{q/\sqrt{12}}\right) = 20\log_{10}\left(2^N\right) + 10\log_{10}\left(\tfrac{3}{2}\right) \approx 6.02\,N + 1.76\ \mathrm{dB}
-$$
-
-| Bits $N$ | Niveles $2^N$ | SQNR teórica | Uso típico |
-| --- | --- | --- | --- |
-| 8 | 256 | 49.9 dB | voz, sistemas antiguos |
-| 16 | 65 536 | 98.1 dB | CD-Audio |
-| 24 | 16 777 216 | 146.3 dB | grabación profesional |
-
-Estos valores son el límite de un conversor ideal; los conversores reales quedan por debajo porque el ruido analógico domina antes [6].
-
-**Tasa de datos.** Sin compresión, con $N_c$ canales:
-
-$$
-R = F_s \cdot N_c \cdot N \quad [\mathrm{bit/s}]
-$$
-
-Para CD-Audio: $R = 44\,100 \cdot 2 \cdot 16 = 1\,411\,200$ bit/s. Este número es exactamente la frecuencia de BCLK del bus I2S cuando cada slot mide $N$ bits (sección 7).
-
----
-
-### 3. El estándar RIFF y la estructura de un WAV
+### 2. El estándar RIFF y la estructura de un WAV
 
 Un archivo RIFF es una secuencia de **chunks**, todos con la misma forma [1][2]:
 
@@ -153,7 +99,7 @@ $$
 
 ---
 
-### 4. Ejemplo real: lectura byte a byte
+### 3. Ejemplo real: lectura byte a byte
 
 Tono de 1 kHz, 1 s, $F_s = 48$ kHz, 16 bits, estéreo:
 
@@ -184,7 +130,7 @@ Los primeros bytes de audio (offset 44 en adelante) son `00 00 00 00 5a 08 a6 f7
 
 ---
 
-### 5. Organización de las muestras en `data`
+### 4. Organización de las muestras en `data`
 
 Las muestras van **entrelazadas por bloques**: en estéreo, el canal 0 es el izquierdo y el canal 1 el derecho [2].
 
@@ -208,33 +154,7 @@ $$
 
 ---
 
-### 6. Por qué no se debe asumir una cabecera de 44 bytes
-
-Muchos programas asumen que el audio empieza siempre en el byte 44; no es una suposición segura [2]. Casos frecuentes:
-
-- Chunk `LIST`/`INFO` con metadatos (título, software codificador). Por ejemplo, `ffmpeg` lo añade por defecto.
-- `fmt ` de 18 o 40 bytes en lugar de 16 (formatos no PCM o `WAVE_FORMAT_EXTENSIBLE`) [2].
-- Chunk `fact` (obligatorio en formatos comprimidos) [2] o `bext` en Broadcast WAVE [3].
-
-Si se leen bytes crudos desde el offset 44, los metadatos entran al DAC como si fueran audio: se oye un chasquido inicial y, si el desplazamiento no es múltiplo de $B$, los canales izquierdo y derecho quedan intercambiados o las muestras desalineadas. La forma correcta es recorrer los chunks con la regla de la sección 3.
-
-Inspección en Linux:
-
-```bash
-soxi tono.wav                    # resumen del formato (paquete sox)
-ffprobe -hide_banner tono.wav    # alternativa con ffmpeg
-xxd -l 64 tono.wav               # o bien: hexdump -C -n 64 tono.wav
-```
-
-Normalizar cualquier audio al formato que espera el hardware:
-
-```bash
-sox entrada.mp3 -e signed-integer -b 16 -c 2 -r 48000 salida.wav
-```
-
----
-
-### 7. Del WAV al bus I2S
+### 5. Del WAV al bus I2S
 
 Cada campo de la cabecera fija un parámetro del transmisor:
 
@@ -278,7 +198,7 @@ que vale $-3.92$ dB en $F_s/2$ y $-2.64$ dB a 20 kHz con $F_s = 48$ kHz, además
 
 ---
 
-### 8. Representación de muestras con signo y su transmisión física en I2S
+### 6. Representación de muestras con signo y su transmisión física en I2S
 
 La representación de las fases positivas (compresión) y negativas (rarefacción) de una onda acústica varía según la profundidad de bits seleccionada en la cabecera WAV, afectando directamente a la disposición de la línea serie de datos `SD` en la interfaz I2S.
 
@@ -346,27 +266,12 @@ SD (Data) : ... [x] | MSB | B14 | B13 | B12 | ... | B1  | B0  |  N/U  | MSB | B1
 
 ```
 
-#### Ejemplos de transmisión serie (8 bits, canal izquierdo, WS = 0)
 
-- **Transmisión de un pulso positivo ($s = +1$, binario `0000 0001`):**
-  1. WS conmuta a nivel bajo `0` (Canal Izquierdo).
-  2. Transcurre 1 ciclo de BCLK de retardo (línea SD en estado indeterminado o bit previo).
-  3. En el siguiente flanco de BCLK, se coloca en SD el MSB: **`0`** (signo positivo).
-  4. Se transmiten en serie los siguientes 6 bits intermedios: `000 000`.
-  5. En el último pulso de datos del slot se envía el LSB: **`1`**.
-
-- **Transmisión de un pulso negativo ($s = -1$, binario `1111 1111`):**
-  1. WS conmuta a nivel bajo `0` (Canal Izquierdo).
-  2. Transcurre 1 ciclo de BCLK de retardo.
-  3. En el siguiente flanco de BCLK, se coloca en SD el MSB: **`1`** (signo negativo).
-  4. Se transmiten en serie los 7 bits restantes, todos con nivel lógico **`1`**.
-
-Si el tamaño del slot del transmisor es mayor que la resolución del audio ($W > N$), los bits posteriores al LSB hasta completar la semi-trama de WS se rellenan con ceros (*zero-padding*) y son ignorados por el DAC.
 
 ## Diagrama de flujo 
 
 <p align="center">
-  <img src="Imagenes\Diagrma protocolo i2s.drawio.png">
+  <img src="Imagenes\Diagrma protocolo i2s-Página-1.drawio.png">
 </p>
 
 ## Diagrama de cajas
@@ -375,16 +280,17 @@ Si el tamaño del slot del transmisor es mayor que la resolución del audio ($W 
   <img src="Imagenes\Diagrama de cajas I2S.png">
 </p>
 
+### 7 Especificaciones y detalles 
 
-### Referencias
+Para el diseño de la consola se establecen los siguientes parametros respecto a los archivos de audio para de esta forma no es necesario leer el encabezado en los archivos WAV
 
-1. IBM Corporation y Microsoft Corporation, *Multimedia Programming Interface and Data Specifications 1.0*, agosto de 1991, pp. 56-65. Copia en McGill University: <https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf>
-2. P. Kabal, "Audio File Format Specifications: WAVE", MMSP Lab, Dept. ECE, McGill University, rev. 2022. <https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html>
-3. Library of Congress, "WAVE Audio File Format" (fdd000001), *Sustainability of Digital Formats*. <https://www.loc.gov/preservation/digital/formats/fdd/fdd000001.shtml>
-4. E. Fleischman, "WAVE and AVI Codec Registries", IETF RFC 2361, junio de 1998. <https://www.rfc-editor.org/rfc/rfc2361>
-5. NXP Semiconductors, *UM11732: I2S bus specification*, Rev. 3.0, 17 de febrero de 2022 (reconstrucción de la especificación Philips de 1986, revisada en 1996). <https://www.nxp.com/docs/en/user-manual/UM11732.pdf>
-6. W. Kester, *MT-001: Taking the Mystery out of the Infamous Formula, "SNR = 6.02N + 1.76dB," and Why You Should Care*, Analog Devices. <https://www.analog.com/media/en/training-seminars/tutorials/MT-001.pdf>
-7. C. E. Shannon, "Communication in the presence of noise", *Proceedings of the IRE*, vol. 37, no. 1, pp. 10-21, 1949.
-8. A. V. Oppenheim y R. W. Schafer, *Discrete-Time Signal Processing*, 3.ª ed., Pearson, 2010, cap. 4.
-9. IEEE Std 1364-2005, *IEEE Standard for Verilog Hardware Description Language*, sección 17.2.9.
-10. W. R. Bennett, "Spectra of quantization noise", *Bell System Technical Journal*, vol. 27, no. 3, pp. 446-472, 1948.
+-Frecuencia de muestreo: 44.1KHz
+-profundiidad de bits: 8 Bits
+-canales: 1
+
+Ademas se propone que el tamaño de los archivos dedicados al audio sean de maximo 25MB y minimo de 2MB, basandonos en los audios sugeridos en la carpeta I2S_sonidos
+
+[I2S_sonidos](I2S_sonidos)
+
+Donde el rango maximo incluye los temas musicales de la consola y de los juegos, y en el minimo solo se tienen en cuenta los sonidos de colisión y demas efectos de los juegos.
+
