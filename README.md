@@ -33,7 +33,7 @@ $$
 
 donde $W$ es el número de ciclos de BCLK por canal (el *slot*) y $N_c = 2$ el número de canales. Como el reloj de bit depende de $F_s$, el audio se reproduce a la velocidad exacta con la que se muestreó.
 
-<p align="center"><img src="Imagenes/i2s.gif" alt="Animación I2S"></p>
+<p align="center"><img src="docs/i2s.gif" alt="Animación I2S"></p>
 
 ---
 
@@ -49,7 +49,7 @@ Para que la FPGA no tenga que interpretar el encabezado WAV, todo el audio de la
 | Codificación | la de un WAV de 8 bits: sin signo, silencio = 128 (`0x80`) |
 | Encabezado | ninguno: solo las muestras |
 
-En un WAV de 8 bits las muestras no tienen signo, y el silencio vale 128. I2S necesita complemento a 2, así que la conversión es $s = u - 128$, que equivale a **invertir el bit 7**. Esa inversión la hace el periférico. El detalle del formato WAV está en [`Formato .WAV/WAV.md`](Formato%20.WAV/WAV.md).
+En un WAV de 8 bits las muestras no tienen signo, y el silencio vale 128. I2S necesita complemento a 2, así que la conversión es $s = u - 128$, que equivale a **invertir el bit 7**. Esa inversión la hace el periférico. El detalle del formato WAV está en [`docs/formato_wav.md`](docs/formato_wav.md).
 
 **Conversión** (los archivos de `I2S_sonidos` están en 16 bits y algunos en estéreo):
 
@@ -207,11 +207,11 @@ Si el audio se preparara a 44.1 kHz y se reprodujera a 43 402.8 Hz, sonaría $12
 
 ### Diagrama de flujo (borrador)
 
-<p align="center"><img src="Imagenes/Diagrma%20protocolo%20i2s-P%C3%A1gina-1.drawio.png" alt="Diagrama de flujo I2S"></p>
+<p align="center"><img src="cores/i2s/diagramas/i2s_flujo.png" alt="Diagrama de flujo I2S"></p>
 
 ### Diagrama de cajas
 
-<p align="center"><img src="Imagenes/Diagrama%20de%20cajas%20I2S.png" alt="Diagrama de cajas I2S"></p>
+<p align="center"><img src="diagramas/i2s_contexto.png" alt="Diagrama de cajas I2S"></p>
 
 ### Pendientes
 
@@ -231,18 +231,23 @@ Si el audio se preparara a 44.1 kHz y se reprodujera a 43 402.8 Hz, sonaría $12
 | Placa y `FCIA_FPGA` | Por definir. Solo cambia `DIV` |
 | Pines físicos y número de instancias (una por cara) | Por definir con integración |
 
-## 8. Estructura sugerida del repositorio
+## 8. Estructura del repositorio
+
+Sigue la plantilla del curso (`2026_1/template`) [3].
 
 ```text
 I2S_tx.v/
-├── README.md
-├── planificacion/README.md
-├── I2S_sonidos/                 # audio original
+├── README.md                    # este documento
+├── .github/ISSUE_TEMPLATE/      # formulario de tareas
+├── planificacion/               # uso de GitHub Projects y tareas
+├── diagramas/                   # contexto del periférico en la consola
+├── docs/                        # protocolo y formato WAV
+├── I2S_sonidos/                 # audio original (WAV)
 ├── cores/i2s/
 │   ├── diagramas/               # flujo, bloques y estados (.png y .pdf)
 │   ├── rtl/                     # *.v, *_TB.v, *_sim.gtkw, Makefile, *.svg
-│   └── firmware/                # i2s.h, i2s.c
-└── firmware/i2s_test/main.c
+│   └── firmware/                # driver: i2s.h, i2s.c
+└── firmware/                    # programas de prueba e integración
 ```
 
 ---
