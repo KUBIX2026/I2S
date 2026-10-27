@@ -284,13 +284,13 @@ SD (Data) : ... [x] | MSB | B14 | B13 | B12 | ... | B1  | B0  |  N/U  | MSB | B1
 
 Para el diseño de la consola se establecen los siguientes parametros respecto a los archivos de audio para de esta forma no es necesario leer el encabezado en los archivos WAV
 
--Frecuencia de muestreo: 44.1KHz
--profundiidad de bits: 8 Bits
--canales: 1
+- **Frecuencia de muestreo: 44.1KHz**
+- **profundiidad de bits: 8 Bits**
+- **canales: 1**
 
-Ademas se propone que el tamaño de los archivos dedicados al audio sean de maximo 25MB y minimo de 2MB, basandonos en los audios sugeridos en la carpeta I2S_sonidos
+**Ademas se propone que el tamaño de los archivos dedicados al audio sean de maximo 25MB y minimo de 2MB, basandonos en los audios sugeridos en la carpeta I2S_sonidos**
 
 [I2S_sonidos](I2S_sonidos)
 
-Donde el rango maximo incluye los temas musicales de la consola y de los juegos, y en el minimo solo se tienen en cuenta los sonidos de colisión y demas efectos de los juegos.
+**Donde el rango maximo incluye los temas musicales de la consola y de los juegos, y en el minimo solo se tienen en cuenta los sonidos de colisión y demas efectos de los juegos.**
 
