@@ -59,13 +59,13 @@ ffmpeg -i entrada.wav -ac 1 -ar 43403 -f u8 salida.raw
 
 **Tamaño.** Después de convertir, el audio ocupa $FS_{REAL} \times 1\ \text{B} \approx 43.4$ kB por segundo:
 
-| Contenido de `I2S_sonidos` | Duración | Tamaño a 16 bits (actual) | Tamaño a 8 bits mono |
+| Contenido de `I2S_sonidos` | Duración | Tamaño a 16 bits  | Tamaño a 8 bits mono |
 |---|---|---|---|
 | Efectos (colisiones, disparos, PONG…) | 8.5 s | ≈ 0.75 MB | **≈ 0.37 MB** |
 | Música e intros | 233 s | ≈ 24.3 MB | **≈ 10.1 MB** |
 | Total | 242 s | 25.0 MB | **≈ 10.5 MB** |
 
-Los 25 MB que se habían estimado corresponden a los archivos actuales, sin convertir. Ya convertidos, los efectos caben sin problema. La música completa no cabe en una flash de 4 MB como la de la Colorlight, así que la cantidad de música queda por acordar con el grupo D (§7).
+los audios ya en tamaño de o bits y mono se encuentran en la carpeta `I2S_Sonidos_8bits`, estos se pudieron convertir facilmente al formato deseado con ayuda de inteligencia artificial.
 
 ---
 
@@ -150,13 +150,13 @@ Las banderas quedan en 1 hasta que se escribe `CLR_ERR`.
 | Hardware (`perip_i2s`) | Software (driver en C) |
 |---|---|
 | Generar BCLK y LRCLK a partir de `clk` | Escoger `DIV` |
-| Guardar hasta 1024 muestras en la FIFO | Leer el audio de la flash, que es una caja negra del grupo D |
+| Guardar hasta 1024 muestras en la FIFO | Leer el audio de la flash |
 | Invertir el bit 7 y serializar MSB primero, en L y R | Mezclar música y efectos |
 | Detectar underflow y overflow | Revisar `STATUS` y recargar la FIFO una vez por cuadro |
 
 | Parámetro | Valor | Fórmula |
 |---|---|---|
-| `FCIA_FPGA` | por definir (25 MHz en la Colorlight) | — |
+| `FCIA_FPGA` | por definir | — |
 | `FS` | 44 100 | — |
 | `PROF_FIFO` | 1024 | — |
 | `DIV_RESET` | 18 con 25 MHz | `(FCIA_FPGA + 16*FS) / (32*FS)` |
