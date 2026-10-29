@@ -12,7 +12,7 @@ Equipo I (Electrónica Digital I, UNAL): José Miguel Ramírez Rubiano, Gabriela
 | Diagrama de flujo | Borrador (§6) |
 | Diagramas de bloques y de estados | Pendiente |
 | RTL, testbenches y driver en C | Pendiente |
-| Placa, `FCIA_FPGA` y región de la flash | Por definir con integración y el grupo D |
+| Placa, `FCIA_FPGA` y región de la flash | Por definir con integración |
 
 ---
 
@@ -217,21 +217,16 @@ Si el audio se preparara a 44.1 kHz y se reprodujera a 43 402.8 Hz, sonaría $12
 
 ## 6. Diagramas
 
-### Diagrama de flujo (borrador)
-
-<p align="center"><img src="cores/i2s/diagramas/i2s_flujo.png" alt="Diagrama de flujo I2S"></p>
-
 ### Diagrama de cajas
 
 <p align="center"><img src="diagramas/i2s_contexto.png" alt="Diagrama de cajas I2S"></p>
 
-### Pendientes
+### Diagrama de flujo 
 
-| Diagrama | Contenido |
-|---|---|
-| Bloques | Registros CSR, FIFO, divisor de BCLK, contador de slots, registro de desplazamiento y FSM, con sus señales y anchos de bus |
-| Estados | La FSM del transmisor, con las salidas en cada estado y las condiciones de transición |
-| Flujo del firmware | El lazo del driver: revisar `STATUS`, recargar la FIFO y revisar errores |
+<p align="center"><img src="cores/i2s/diagramas/i2s_flujo.png" alt="Diagrama de flujo I2S"></p>
+
+
+
 
 ---
 
