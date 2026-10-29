@@ -8,8 +8,8 @@ Equipo I (Electrónica Digital I, UNAL): José Miguel Ramírez Rubiano, Gabriela
 
 | Entregable | Estado |
 |---|---|
-| Especificación: función, registros CSR, errores y parámetros | Lista (§3) |
-| Diagrama de flujo | Borrador (§6) |
+| Especificación: función, registros CSR, errores y parámetros | Lista |
+| Diagrama de flujo | Borrador |
 | Diagramas de bloques y de estados | Pendiente |
 | RTL, testbenches y driver en C | Pendiente |
 | Placa, `FCIA_FPGA` y región de la flash | Por definir con integración |
