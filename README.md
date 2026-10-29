@@ -83,7 +83,7 @@ los audios ya en tamaño de o bits y mono se encuentran en la carpeta `I2S_Sonid
 
 **Por qué el slot es de 16 bits:** el MAX98357A solo acepta palabras de 16, 24 o 32 bits y BCLK = 32, 48 o 64 × LRCLK [2]. En I2S el MSB tiene posición fija y los bits que sobran se rellenan con ceros [1], así que la muestra de 8 bits se envía como $s \cdot 2^8$, con la misma amplitud.
 
-### 3.2 Interfaz
+<!--### 3.2 Interfaz
 
 Sigue el contrato de puertos del curso [3]. El archivo es `cores/i2s/perip_i2s.v`.
 
@@ -141,11 +141,11 @@ Las banderas quedan en 1 hasta que se escribe `CLR_ERR`.
 | A4 | 1025 escrituras con EN = 0 | LEVEL = 1024, FULL = 1, OVERFLOW = 1 |
 | A5 | EN = 1 con la FIFO vacía | SD = 0 y UNDERFLOW = 1; `CLR_ERR` la borra |
 | A6 | EN = 0 a mitad de una trama | La trama termina; luego BCLK = LRCLK = SD = 0 y RUN = 0 |
-| A7 | En la FPGA | $f_{LRCLK} = FS_{REAL}$ ± 100 ppm (osciloscopio); tono audible sin chasquidos |
+| A7 | En la FPGA | $f_{LRCLK} = FS_{REAL}$ ± 100 ppm (osciloscopio); tono audible sin chasquidos | -->
 
 ## 4. Arquitectura
 
-### 4.1 Partición hardware–software
+<!--### 4.1 Partición hardware–software
 
 | Hardware (`perip_i2s`) | Software (driver en C) |
 |---|---|
@@ -161,9 +161,9 @@ Las banderas quedan en 1 hasta que se escribe `CLR_ERR`.
 | `PROF_FIFO` | 1024 | — |
 | `DIV_RESET` | 18 con 25 MHz | `(FCIA_FPGA + 16*FS) / (32*FS)` |
 
-En `DIV_RESET`, el 16 es la mitad de 32 y sirve para redondear la división entera. No se refiere al número de bits.
+En `DIV_RESET`, el 16 es la mitad de 32 y sirve para redondear la división entera. No se refiere al número de bits.-->
 
-### 4.2 Trama I2S
+### 4.1 Trama I2S
 
 | `slot` | 0 – 7 | 8 – 14 | 15 | 16 – 23 | 24 – 30 | 31 |
 |---|---|---|---|---|---|---|
@@ -172,14 +172,14 @@ En `DIV_RESET`, el 16 es la mitad de 32 y sirve para redondear la división ente
 
 LRCLK cambia un slot antes del MSB de cada canal. El transmisor se detiene solo al final de una trama: el MAX98357A entra en reposo cuando BCLK se detiene, pero no admite que LRCLK se quite mientras BCLK sigue activo [2].
 
-### 4.3 Decisiones
+<!--### 4.3 Decisiones
 
 | Decisión | Elegida | Descartada |
 |---|---|---|
 | Fuente de las muestras | La CPU llena una FIFO por CSR | Que el I2S lea la flash directamente: la flash es del grupo D y habría dos maestros en el bus |
 | Búfer | FIFO de 1024 muestras | Un solo registro: la CPU tendría que escribir cada 23 µs |
 | Reloj | Divisor entero, con el audio convertido a $FS_{REAL}$ | Divisor fraccional (NCO): añade jitter. PLL: depende de una placa aún no definida |
-| Canales | Mono, duplicado en L y R | Estéreo: hay un parlante por cara y duplica la carga de CPU y de flash |
+| Canales | Mono, duplicado en L y R | Estéreo: hay un parlante por cara y duplica la carga de CPU y de flash | -->
 
 ---
 
@@ -201,14 +201,14 @@ $$
 
 Si el audio se preparara a 44.1 kHz y se reprodujera a 43 402.8 Hz, sonaría $1200 \log_2(43\,402.8/44\,100) = -27.6$ cents más grave. Por eso se convierte directamente a $FS_{REAL}$ (§2): el divisor entero no añade jitter y el tono queda exacto.
 
-### 5.2 FIFO
+<!--### 5.2 FIFO
 
 - **Autonomía:** $1024 / FS_{REAL} = 23.6$ ms. A 60 cuadros/s el juego consume 723 muestras por cuadro, así que quedan 301 de margen.
 - **Recarga mínima:** $FS_{REAL}/1024 \approx 42$ Hz. Si el juego cae por debajo, hay underflow.
 - **Memoria:** 1024 × 8 bits = 8 kbit, menos de un bloque de BRAM.
-- **Lectura de la flash:** 43.4 kB/s, unos 24 s de audio por MiB.
+- **Lectura de la flash:** 43.4 kB/s, unos 24 s de audio por MiB.-->
 
-### 5.3 Resolución y salida
+### 5.2 Resolución y salida
 
 - **Resolución:** con 8 bits, $SQNR = 6.02N + 1.76 = 49.9$ dB [5]. Alcanza para el estilo retro de la consola, aunque en pasajes suaves se nota algo de ruido. Subir a 16 bits solo exige cambiar el formato del audio y el registro `DATA`, y duplica el tamaño.
 - **Por qué se duplica la muestra:** el módulo reproduce (L+R)/2. Si se envía $s$ en ambos canales, sale $s$. Si R fuera 0, saldría $s/2$, es decir, 6 dB menos.
