@@ -221,7 +221,7 @@ Si el audio se preparara a 44.1 kHz y se reprodujera a 43 402.8 Hz, sonaría $12
 
 <p align="center"><img src="cores/i2s/diagramas/i2s_flujo.png" alt="Diagrama de flujo I2S"></p>
 
-<p align="center"><img src="cores/i2s/diagramas/i2s_flujo.png" alt="Diagrama de flujo I2S"></p>
+<p align="center"><img src="diagramas/flujo_1_general.drawio.png" alt="Diagrama de flujo I2S"></p>
 
 
 ### Diagrama de cajas
