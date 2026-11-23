@@ -10,7 +10,7 @@ Equipo I (Electrónica Digital I, UNAL): José Miguel Ramírez Rubiano, Gabriela
 |---|---|
 | Especificación: función, registros CSR, errores y parámetros | Lista |
 | Diagrama de flujo | listo |
-| Diagramas de bloques y de estados | Pendiente |
+| Diagramas de bloques y de estados | Listo |
 | RTL, testbenches y driver en C | Pendiente |
 | Placa, `FCIA_FPGA` y región de la flash | Por definir con integración |
 
